@@ -51,6 +51,9 @@ const MAX_HOLD = 720;
 const COOLDOWN = 30;
 const STAKE_BPS = 9000n;
 const SLIP_BPS = 100;
+/** Guard band for the dip setup: the close may sit this far under the slow
+ *  EMA and still count as an intact uptrend (20 bps = 0.998 of it). */
+const DIP_TREND_TOLERANCE = 0.998;
 
 interface Ema { span: number; warm: number[]; value: number | null }
 function makeEma(span: number): Ema { return { span, warm: [], value: null }; }
@@ -118,7 +121,7 @@ await runBars({
 
     const prev = closes[closes.length - 2];
     const dipHigh = windowMax(DIP_LOOK);
-    const dipSetup = dipHigh > 0 && close <= dipHigh * (1 - DIP_BPS / 10000) && close >= slow.value * 0.998 && close > prev;
+    const dipSetup = dipHigh > 0 && close <= dipHigh * (1 - DIP_BPS / 10000) && close >= slow.value * DIP_TREND_TOLERANCE && close > prev;
     const breakHigh = windowMax(BREAK_LOOK);
     const momBase = closes[closes.length - 1 - MOM_LOOK];
     const breakSetup = fast.value > slow.value && close >= breakHigh && momBase > 0 && close >= momBase * (1 + MOM_BPS / 10000);
